@@ -8,6 +8,7 @@ class GlassCard extends StatelessWidget {
   final double borderRadius;
   final VoidCallback? onTap;
   final bool hasBorder;
+  final Color? borderColor;
 
   const GlassCard({
     super.key,
@@ -17,6 +18,7 @@ class GlassCard extends StatelessWidget {
     this.borderRadius = 16,
     this.onTap,
     this.hasBorder = true,
+    this.borderColor,
   });
 
   @override
@@ -26,7 +28,7 @@ class GlassCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(borderRadius),
-        border: hasBorder ? Border.all(color: AppColors.cardBorder, width: 1.5) : null,
+        border: hasBorder ? Border.all(color: borderColor ?? AppColors.cardBorder, width: 1.5) : null,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.1),

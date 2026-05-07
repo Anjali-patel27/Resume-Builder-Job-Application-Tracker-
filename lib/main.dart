@@ -1,11 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-import 'models/resume.dart';
-import 'models/job_application.dart';
 import 'providers/resume_provider.dart';
 import 'providers/application_provider.dart';
 import 'providers/connectivity_provider.dart';
@@ -15,6 +12,9 @@ import 'utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Set preferred orientation and status bar style
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -22,14 +22,10 @@ void main() async {
     ),
   );
 
-  await Hive.initFlutter();
-  Hive.registerAdapter(EducationAdapter());
-  Hive.registerAdapter(ExperienceAdapter());
-  Hive.registerAdapter(ResumeAdapter());
-  Hive.registerAdapter(JobApplicationAdapter());
-
+  // Initialize Providers (Database initialization is handled inside Providers via DatabaseService)
   final resumeProvider = ResumeProvider();
   final applicationProvider = ApplicationProvider();
+  
   await resumeProvider.init();
   await applicationProvider.init();
 

@@ -1,54 +1,22 @@
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/job_application.dart';
+import '../services/database_service.dart';
 
 class ApplicationProvider extends ChangeNotifier {
-  static const String _boxName = 'applications';
-  late Box<JobApplication> _box;
+  final DatabaseService _db = DatabaseService.instance;
   List<JobApplication> _applications = [];
   bool _isLoading = false;
 
-  // Search & filter state
-  String _searchQuery = '';
-  ApplicationStatus? _filterStatus;
-  DateTime? _filterDateFrom;
-  DateTime? _filterDateTo;
-
   List<JobApplication> get allApplications => List.unmodifiable(_applications);
   bool get isLoading => _isLoading;
-  String get searchQuery => _searchQuery;
-  ApplicationStatus? get filterStatus => _filterStatus;
 
-  List<JobApplication> get filteredApplications {
-    var list = _applications.toList();
-    if (_searchQuery.isNotEmpty) {
-      final q = _searchQuery.toLowerCase();
-      list = list
-          .where(
-            (a) =>
-                a.companyName.toLowerCase().contains(q) ||
-                a.jobRole.toLowerCase().contains(q),
-          )
-          .toList();
-    }
-    if (_filterStatus != null) {
-      list = list.where((a) => a.status == _filterStatus).toList();
-    }
-    if (_filterDateFrom != null) {
-      list = list
-          .where((a) => a.dateApplied.isAfter(_filterDateFrom!))
-          .toList();
-    }
-    if (_filterDateTo != null) {
-      list = list
-          .where((a) => a.dateApplied.isBefore(_filterDateTo!))
-          .toList();
-    }
-    return list;
+  List<JobApplication> get recentApplications {
+    final sorted = _applications.toList()
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    return sorted.take(5).toList();
   }
 
-  // Dashboard stats
   int get totalApplications => _applications.length;
 
   Map<ApplicationStatus, int> get statusDistribution {
@@ -59,20 +27,15 @@ class ApplicationProvider extends ChangeNotifier {
     return map;
   }
 
-  List<JobApplication> get recentApplications {
-    final sorted = _applications.toList()
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return sorted.take(5).toList();
-  }
-
   Future<void> init() async {
-    _box = await Hive.openBox<JobApplication>(_boxName);
-    _loadApplications();
+    await _loadApplications();
   }
 
-  void _loadApplications() {
-    _applications = _box.values.toList();
-    _applications.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+  Future<void> _loadApplications() async {
+    _isLoading = true;
+    notifyListeners();
+    _applications = await _db.readAllApplications();
+    _isLoading = false;
     notifyListeners();
   }
 
@@ -105,19 +68,28 @@ class ApplicationProvider extends ChangeNotifier {
       updatedAt: now,
     );
 
-    await _box.put(app.id, app);
-    _loadApplications();
+    await _db.createApplication(app);
+    await _loadApplications();
     return app;
   }
 
   Future<void> updateApplicationStatus(String id, ApplicationStatus newStatus) async {
-    final app = _box.get(id);
-    if (app != null) {
-      app.status = newStatus;
-      app.updatedAt = DateTime.now();
-      await app.save();
-      _loadApplications();
-    }
+    final app = _applications.firstWhere((a) => a.id == id);
+    app.status = newStatus;
+    app.updatedAt = DateTime.now();
+    await _db.updateApplication(app);
+    await _loadApplications();
+  }
+
+  Future<void> updateApplication(JobApplication app) async {
+    app.updatedAt = DateTime.now();
+    await _db.updateApplication(app);
+    await _loadApplications();
+  }
+
+  Future<void> deleteApplication(String id) async {
+    await _db.deleteApplication(id);
+    await _loadApplications();
   }
 
   List<JobApplication> searchAndFilter(String query, ApplicationStatus? status) {
@@ -133,41 +105,6 @@ class ApplicationProvider extends ChangeNotifier {
       list = list.where((a) => a.status == status).toList();
     }
     return list;
-  }
-
-  Future<void> updateApplication(JobApplication app) async {
-    app.updatedAt = DateTime.now();
-    await _box.put(app.id, app);
-    _loadApplications();
-  }
-
-  Future<void> deleteApplication(String id) async {
-    await _box.delete(id);
-    _loadApplications();
-  }
-
-  void setSearchQuery(String query) {
-    _searchQuery = query;
-    notifyListeners();
-  }
-
-  void setFilterStatus(ApplicationStatus? status) {
-    _filterStatus = status;
-    notifyListeners();
-  }
-
-  void setDateRange(DateTime? from, DateTime? to) {
-    _filterDateFrom = from;
-    _filterDateTo = to;
-    notifyListeners();
-  }
-
-  void clearFilters() {
-    _searchQuery = '';
-    _filterStatus = null;
-    _filterDateFrom = null;
-    _filterDateTo = null;
-    notifyListeners();
   }
 
   List<JobApplication> getApplicationsByResume(String resumeId) {

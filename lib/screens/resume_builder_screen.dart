@@ -31,8 +31,8 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
   final _skillCtrl = TextEditingController();
   List<Experience> _experiences = [];
 
-  // Local state for inline editing
-  int? _editingEduIndex;
+  // Local state for inline forms
+  int? _editingEduIndex; // -1 for new, null for none, index for editing
   int? _editingExpIndex;
   
   final _eduDegreeCtrl = TextEditingController();
@@ -64,6 +64,13 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
   @override
   void dispose() {
     _tabController.dispose();
+    _profileNameCtrl.dispose();
+    _fullNameCtrl.dispose();
+    _emailCtrl.dispose();
+    _phoneCtrl.dispose();
+    _addressCtrl.dispose();
+    _objectiveCtrl.dispose();
+    _skillCtrl.dispose();
     _eduDegreeCtrl.dispose();
     _eduInstCtrl.dispose();
     _eduYearCtrl.dispose();
@@ -109,7 +116,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
       }
       if (mounted) Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -120,7 +127,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
-        title: Text(widget.existingResume != null ? 'Edit Profile' : 'New Resume'),
+        title: Text(widget.existingResume != null ? 'Edit Resume' : 'New Resume'),
         actions: [
           IconButton(
             onPressed: _isLoading ? null : _save,
@@ -163,12 +170,12 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          _buildField(_profileNameCtrl, 'Profile Name', Icons.badge_outlined),
+          _buildField(_profileNameCtrl, 'Profile Name (e.g. My Primary Resume)', Icons.badge_outlined),
           _buildField(_fullNameCtrl, 'Full Name', Icons.person_outline),
           _buildField(_emailCtrl, 'Email Address', Icons.email_outlined),
           _buildField(_phoneCtrl, 'Phone Number', Icons.phone_outlined),
-          _buildField(_addressCtrl, 'Location', Icons.location_on_outlined),
-          _buildField(_objectiveCtrl, 'Career Objective', Icons.info_outline, maxLines: 4),
+          _buildField(_addressCtrl, 'City, Country', Icons.location_on_outlined),
+          _buildField(_objectiveCtrl, 'Professional Objective', Icons.info_outline, maxLines: 4),
         ],
       ),
     );
@@ -185,7 +192,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
           labelText: label,
           prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
         ),
-        validator: (v) => v!.isEmpty ? 'Field required' : null,
+        validator: (v) => v!.isEmpty ? 'This field is required' : null,
       ),
     );
   }
@@ -194,7 +201,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (_editingEduIndex == -1) _buildEduForm(),
+        if (_editingEduIndex == -1) _buildEduForm(isNew: true),
         ..._educationList.asMap().entries.map((e) {
           if (_editingEduIndex == e.key) return _buildEduForm(index: e.key);
           return GlassCard(
@@ -208,56 +215,69 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
             child: ListTile(
               title: Text(e.value.degree, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
               subtitle: Text('${e.value.institution} (${e.value.year})'),
-              trailing: IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.rejected), onPressed: () => setState(() => _educationList.removeAt(e.key))),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.rejected),
+                onPressed: () => setState(() => _educationList.removeAt(e.key)),
+              ),
             ),
           );
         }),
         if (_editingEduIndex == null)
-          Center(
-            child: TextButton.icon(
-              onPressed: () => setState(() {
-                _editingEduIndex = -1;
-                _eduDegreeCtrl.clear();
-                _eduInstCtrl.clear();
-                _eduYearCtrl.clear();
-              }),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Add Education Entry'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: ElevatedButton.icon(
+                onPressed: () => setState(() {
+                  _editingEduIndex = -1;
+                  _eduDegreeCtrl.clear();
+                  _eduInstCtrl.clear();
+                  _eduYearCtrl.clear();
+                }),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Education Details'),
+              ),
             ),
           ),
       ],
     );
   }
 
-  Widget _buildEduForm({int? index}) {
+  Widget _buildEduForm({int? index, bool isNew = false}) {
     return GlassCard(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       borderColor: AppColors.primary,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(controller: _eduDegreeCtrl, decoration: const InputDecoration(labelText: 'Degree / Course')),
-          const SizedBox(height: 12),
-          TextField(controller: _eduInstCtrl, decoration: const InputDecoration(labelText: 'Institution')),
-          const SizedBox(height: 12),
-          TextField(controller: _eduYearCtrl, decoration: const InputDecoration(labelText: 'Year')),
+          Text(isNew ? 'New Education' : 'Edit Education', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
+          TextField(controller: _eduDegreeCtrl, decoration: const InputDecoration(labelText: 'Degree / Certificate', hintText: 'e.g. B.Tech Computer Science')),
+          const SizedBox(height: 12),
+          TextField(controller: _eduInstCtrl, decoration: const InputDecoration(labelText: 'Institution', hintText: 'e.g. Harvard University')),
+          const SizedBox(height: 12),
+          TextField(controller: _eduYearCtrl, decoration: const InputDecoration(labelText: 'Year', hintText: 'e.g. 2024')),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(onPressed: () => setState(() => _editingEduIndex = null), child: const Text('Cancel')),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: () {
-                  if (_eduDegreeCtrl.text.isEmpty) return;
-                  final edu = Education(degree: _eduDegreeCtrl.text, institution: _eduInstCtrl.text, year: _eduYearCtrl.text);
+                  if (_eduDegreeCtrl.text.trim().isEmpty) return;
+                  final edu = Education(
+                    degree: _eduDegreeCtrl.text.trim(),
+                    institution: _eduInstCtrl.text.trim(),
+                    year: _eduYearCtrl.text.trim(),
+                  );
                   setState(() {
                     if (index != null) _educationList[index] = edu;
                     else _educationList.add(edu);
                     _editingEduIndex = null;
                   });
                 },
-                child: const Text('Save Entry'),
+                child: const Text('Confirm Entry'),
               ),
             ],
           ),
@@ -267,29 +287,38 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
   }
 
   Widget _buildSkillsTab() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           Row(
             children: [
-              Expanded(child: TextFormField(controller: _skillCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: const InputDecoration(hintText: 'Enter skill...'))),
+              Expanded(
+                child: TextFormField(
+                  controller: _skillCtrl,
+                  style: const TextStyle(color: AppColors.textPrimary),
+                  decoration: const InputDecoration(hintText: 'Add a skill (e.g. Flutter)'),
+                ),
+              ),
               const SizedBox(width: 12),
-              ElevatedButton(onPressed: () {
-                if (_skillCtrl.text.isNotEmpty) {
-                  setState(() => _skills.add(_skillCtrl.text.trim()));
-                  _skillCtrl.clear();
-                }
-              }, child: const Icon(Icons.add_rounded)),
+              ElevatedButton(
+                onPressed: () {
+                  if (_skillCtrl.text.isNotEmpty) {
+                    setState(() => _skills.add(_skillCtrl.text.trim()));
+                    _skillCtrl.clear();
+                  }
+                },
+                child: const Icon(Icons.add_rounded),
+              ),
             ],
           ),
           const SizedBox(height: 24),
           Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children: _skills.map((s) => Chip(
               backgroundColor: AppColors.primary.withOpacity(0.1),
-              label: Text(s, style: const TextStyle(color: AppColors.primary)),
+              label: Text(s, style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
               onDeleted: () => setState(() => _skills.remove(s)),
             )).toList(),
           ),
@@ -302,7 +331,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        if (_editingExpIndex == -1) _buildExpForm(),
+        if (_editingExpIndex == -1) _buildExpForm(isNew: true),
         ..._experiences.asMap().entries.map((e) {
           if (_editingExpIndex == e.key) return _buildExpForm(index: e.key);
           return GlassCard(
@@ -316,56 +345,69 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
             child: ListTile(
               title: Text(e.value.role, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
               subtitle: Text('${e.value.company} (${e.value.duration})'),
-              trailing: IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.rejected), onPressed: () => setState(() => _experiences.removeAt(e.key))),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete_outline, color: AppColors.rejected),
+                onPressed: () => setState(() => _experiences.removeAt(e.key)),
+              ),
             ),
           );
         }),
         if (_editingExpIndex == null)
-          Center(
-            child: TextButton.icon(
-              onPressed: () => setState(() {
-                _editingExpIndex = -1;
-                _expRoleCtrl.clear();
-                _expCompCtrl.clear();
-                _expDurCtrl.clear();
-              }),
-              icon: const Icon(Icons.add_rounded),
-              label: const Text('Add Experience Entry'),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: ElevatedButton.icon(
+                onPressed: () => setState(() {
+                  _editingExpIndex = -1;
+                  _expRoleCtrl.clear();
+                  _expCompCtrl.clear();
+                  _expDurCtrl.clear();
+                }),
+                icon: const Icon(Icons.add_rounded),
+                label: const Text('Add Experience Details'),
+              ),
             ),
           ),
       ],
     );
   }
 
-  Widget _buildExpForm({int? index}) {
+  Widget _buildExpForm({int? index, bool isNew = false}) {
     return GlassCard(
       margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       borderColor: AppColors.primary,
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          TextField(controller: _expRoleCtrl, decoration: const InputDecoration(labelText: 'Job Role')),
-          const SizedBox(height: 12),
-          TextField(controller: _expCompCtrl, decoration: const InputDecoration(labelText: 'Company')),
-          const SizedBox(height: 12),
-          TextField(controller: _expDurCtrl, decoration: const InputDecoration(labelText: 'Duration')),
+          Text(isNew ? 'New Experience' : 'Edit Experience', style: const TextStyle(color: AppColors.primary, fontWeight: FontWeight.bold)),
           const SizedBox(height: 16),
+          TextField(controller: _expRoleCtrl, decoration: const InputDecoration(labelText: 'Job Role', hintText: 'e.g. Senior Developer')),
+          const SizedBox(height: 12),
+          TextField(controller: _expCompCtrl, decoration: const InputDecoration(labelText: 'Company', hintText: 'e.g. Google')),
+          const SizedBox(height: 12),
+          TextField(controller: _expDurCtrl, decoration: const InputDecoration(labelText: 'Duration', hintText: 'e.g. 2021 - Present')),
+          const SizedBox(height: 20),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               TextButton(onPressed: () => setState(() => _editingExpIndex = null), child: const Text('Cancel')),
-              const SizedBox(width: 8),
+              const SizedBox(width: 12),
               ElevatedButton(
                 onPressed: () {
-                  if (_expRoleCtrl.text.isEmpty) return;
-                  final exp = Experience(role: _expRoleCtrl.text, company: _expCompCtrl.text, duration: _expDurCtrl.text);
+                  if (_expRoleCtrl.text.trim().isEmpty) return;
+                  final exp = Experience(
+                    role: _expRoleCtrl.text.trim(),
+                    company: _expCompCtrl.text.trim(),
+                    duration: _expDurCtrl.text.trim(),
+                  );
                   setState(() {
                     if (index != null) _experiences[index] = exp;
                     else _experiences.add(exp);
                     _editingExpIndex = null;
                   });
                 },
-                child: const Text('Save Entry'),
+                child: const Text('Confirm Entry'),
               ),
             ],
           ),

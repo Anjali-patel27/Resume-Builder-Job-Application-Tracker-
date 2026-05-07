@@ -1,11 +1,10 @@
 import 'package:flutter/foundation.dart';
-import 'package:hive_flutter/hive_flutter.dart';
 import 'package:uuid/uuid.dart';
 import '../models/resume.dart';
+import '../services/database_service.dart';
 
 class ResumeProvider extends ChangeNotifier {
-  static const String _boxName = 'resumes';
-  late Box<Resume> _box;
+  final DatabaseService _db = DatabaseService.instance;
   List<Resume> _resumes = [];
   bool _isLoading = false;
 
@@ -13,36 +12,28 @@ class ResumeProvider extends ChangeNotifier {
   bool get isLoading => _isLoading;
 
   Future<void> init() async {
-    _box = await Hive.openBox<Resume>(_boxName);
-    _loadResumes();
+    await _loadResumes();
   }
 
-  void _loadResumes() {
-    _resumes = _box.values.toList();
-    _resumes.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+  Future<void> _loadResumes() async {
+    _isLoading = true;
+    notifyListeners();
+    _resumes = await _db.readAllResumes();
+    _isLoading = false;
     notifyListeners();
   }
 
-  Future<Resume> createResume({
+  Future<void> createResume({
     required String profileName,
     required String fullName,
     required String email,
     required String phone,
-    String address = '',
-    String objective = '',
-    List<Education>? education,
-    List<String>? skills,
-    List<Experience>? experiences,
+    required String address,
+    required String objective,
+    required List<Education> education,
+    required List<String> skills,
+    required List<Experience> experiences,
   }) async {
-    // Check for duplicate profile name
-    final exists = _resumes.any(
-      (r) => r.profileName.toLowerCase() == profileName.toLowerCase(),
-    );
-    if (exists) {
-      throw Exception('A resume with this profile name already exists.');
-    }
-
-    final now = DateTime.now();
     final resume = Resume(
       id: const Uuid().v4(),
       profileName: profileName,
@@ -51,27 +42,24 @@ class ResumeProvider extends ChangeNotifier {
       phone: phone,
       address: address,
       objective: objective,
-      education: education ?? [],
-      skills: skills ?? [],
-      experiences: experiences ?? [],
-      createdAt: now,
-      updatedAt: now,
+      education: education,
+      skills: skills,
+      experiences: experiences,
+      createdAt: DateTime.now(),
     );
 
-    await _box.put(resume.id, resume);
-    _loadResumes();
-    return resume;
+    await _db.createResume(resume);
+    await _loadResumes();
   }
 
   Future<void> updateResume(Resume resume) async {
-    resume.updatedAt = DateTime.now();
-    await _box.put(resume.id, resume);
-    _loadResumes();
+    await _db.updateResume(resume);
+    await _loadResumes();
   }
 
   Future<void> deleteResume(String id) async {
-    await _box.delete(id);
-    _loadResumes();
+    await _db.deleteResume(id);
+    await _loadResumes();
   }
 
   Resume? getResumeById(String id) {
@@ -80,17 +68,5 @@ class ResumeProvider extends ChangeNotifier {
     } catch (_) {
       return null;
     }
-  }
-
-  List<Resume> searchResumes(String query) {
-    if (query.isEmpty) return _resumes;
-    final q = query.toLowerCase();
-    return _resumes
-        .where(
-          (r) =>
-              r.profileName.toLowerCase().contains(q) ||
-              r.fullName.toLowerCase().contains(q),
-        )
-        .toList();
   }
 }

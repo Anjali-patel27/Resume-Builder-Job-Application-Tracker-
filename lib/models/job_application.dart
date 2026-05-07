@@ -1,7 +1,3 @@
-import 'package:hive/hive.dart';
-
-part 'job_application.g.dart';
-
 enum ApplicationStatus {
   applied,
   shortlisted,
@@ -10,39 +6,17 @@ enum ApplicationStatus {
   selected,
 }
 
-@HiveType(typeId: 3)
-class JobApplication extends HiveObject {
-  @HiveField(0)
+class JobApplication {
   String id;
-
-  @HiveField(1)
-  String applicationId; // unique generated ID
-
-  @HiveField(2)
+  String applicationId;
   String companyName;
-
-  @HiveField(3)
   String jobRole;
-
-  @HiveField(4)
   DateTime dateApplied;
-
-  @HiveField(5)
-  String resumeId; // linked resume
-
-  @HiveField(6)
+  String resumeId;
   String resumeProfileName;
-
-  @HiveField(7)
-  int statusIndex; // maps to ApplicationStatus enum
-
-  @HiveField(8)
+  int statusIndex;
   String notes;
-
-  @HiveField(9)
   DateTime createdAt;
-
-  @HiveField(10)
   DateTime updatedAt;
 
   JobApplication({
@@ -53,28 +27,44 @@ class JobApplication extends HiveObject {
     required this.dateApplied,
     required this.resumeId,
     required this.resumeProfileName,
-    this.statusIndex = 0,
-    this.notes = '',
+    required this.statusIndex,
+    required this.notes,
     required this.createdAt,
     required this.updatedAt,
   });
 
   ApplicationStatus get status => ApplicationStatus.values[statusIndex];
+  set status(ApplicationStatus value) => statusIndex = value.index;
 
-  set status(ApplicationStatus s) => statusIndex = s.index;
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'applicationId': applicationId,
+      'companyName': companyName,
+      'jobRole': jobRole,
+      'dateApplied': dateApplied.toIso8601String(),
+      'resumeId': resumeId,
+      'resumeProfileName': resumeProfileName,
+      'statusIndex': statusIndex,
+      'notes': notes,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 
-  String get statusLabel {
-    switch (status) {
-      case ApplicationStatus.applied:
-        return 'Applied';
-      case ApplicationStatus.shortlisted:
-        return 'Shortlisted';
-      case ApplicationStatus.interviewScheduled:
-        return 'Interview Scheduled';
-      case ApplicationStatus.rejected:
-        return 'Rejected';
-      case ApplicationStatus.selected:
-        return 'Selected';
-    }
+  factory JobApplication.fromMap(Map<String, dynamic> map) {
+    return JobApplication(
+      id: map['id'],
+      applicationId: map['applicationId'] ?? '',
+      companyName: map['companyName'] ?? '',
+      jobRole: map['jobRole'] ?? '',
+      dateApplied: DateTime.parse(map['dateApplied']),
+      resumeId: map['resumeId'] ?? '',
+      resumeProfileName: map['resumeProfileName'] ?? '',
+      statusIndex: map['statusIndex'] ?? 0,
+      notes: map['notes'] ?? '',
+      createdAt: DateTime.parse(map['createdAt']),
+      updatedAt: DateTime.parse(map['updatedAt']),
+    );
   }
 }
