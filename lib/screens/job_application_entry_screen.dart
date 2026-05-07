@@ -5,6 +5,7 @@ import '../providers/application_provider.dart';
 import '../providers/resume_provider.dart';
 import '../models/resume.dart';
 import '../utils/app_colors.dart';
+import 'resume_builder_screen.dart';
 import '../widgets/glass_card.dart';
 import '../widgets/gradient_button.dart';
 
@@ -123,9 +124,35 @@ class _JobApplicationEntryScreenState extends State<JobApplicationEntryScreen> {
   Widget _buildResumePicker(List<Resume> resumes) {
     if (resumes.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(color: AppColors.rejected.withOpacity(0.1), borderRadius: BorderRadius.circular(12), border: Border.all(color: AppColors.rejected.withOpacity(0.3))),
-        child: const Text('No resumes found. Please create one first.', style: TextStyle(color: AppColors.rejected, fontSize: 13, fontWeight: FontWeight.w600)),
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.rejected.withOpacity(0.05),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: AppColors.rejected.withOpacity(0.2)),
+        ),
+        child: Column(
+          children: [
+            const Text(
+              'No resume profiles found.',
+              style: TextStyle(color: AppColors.rejected, fontSize: 14, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 12),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ResumeBuilderScreen()),
+              ),
+              icon: const Icon(Icons.add_rounded, size: 18),
+              label: const Text('Create Your First Resume'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.rejected.withOpacity(0.1),
+                foregroundColor: AppColors.rejected,
+                elevation: 0,
+              ),
+            ),
+          ],
+        ),
       );
     }
     return SizedBox(

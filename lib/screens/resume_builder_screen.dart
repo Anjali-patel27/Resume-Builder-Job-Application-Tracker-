@@ -31,6 +31,18 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
   final _skillCtrl = TextEditingController();
   List<Experience> _experiences = [];
 
+  // Local state for inline editing
+  int? _editingEduIndex;
+  int? _editingExpIndex;
+  
+  final _eduDegreeCtrl = TextEditingController();
+  final _eduInstCtrl = TextEditingController();
+  final _eduYearCtrl = TextEditingController();
+  
+  final _expRoleCtrl = TextEditingController();
+  final _expCompCtrl = TextEditingController();
+  final _expDurCtrl = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -52,11 +64,20 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
   @override
   void dispose() {
     _tabController.dispose();
+    _eduDegreeCtrl.dispose();
+    _eduInstCtrl.dispose();
+    _eduYearCtrl.dispose();
+    _expRoleCtrl.dispose();
+    _expCompCtrl.dispose();
+    _expDurCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _save() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate()) {
+      _tabController.animateTo(0);
+      return;
+    }
     setState(() => _isLoading = true);
     
     try {
@@ -159,6 +180,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
       child: TextFormField(
         controller: ctrl,
         maxLines: maxLines,
+        style: const TextStyle(color: AppColors.textPrimary),
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, size: 20, color: AppColors.primary),
@@ -172,27 +194,76 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        ..._educationList.asMap().entries.map((e) => GlassCard(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            title: Text(e.value.degree, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(e.value.institution),
-            trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => setState(() => _educationList.removeAt(e.key))),
+        if (_editingEduIndex == -1) _buildEduForm(),
+        ..._educationList.asMap().entries.map((e) {
+          if (_editingEduIndex == e.key) return _buildEduForm(index: e.key);
+          return GlassCard(
+            margin: const EdgeInsets.only(bottom: 12),
+            onTap: () => setState(() {
+              _editingEduIndex = e.key;
+              _eduDegreeCtrl.text = e.value.degree;
+              _eduInstCtrl.text = e.value.institution;
+              _eduYearCtrl.text = e.value.year;
+            }),
+            child: ListTile(
+              title: Text(e.value.degree, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              subtitle: Text('${e.value.institution} (${e.value.year})'),
+              trailing: IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.rejected), onPressed: () => setState(() => _educationList.removeAt(e.key))),
+            ),
+          );
+        }),
+        if (_editingEduIndex == null)
+          Center(
+            child: TextButton.icon(
+              onPressed: () => setState(() {
+                _editingEduIndex = -1;
+                _eduDegreeCtrl.clear();
+                _eduInstCtrl.clear();
+                _eduYearCtrl.clear();
+              }),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Education Entry'),
+            ),
           ),
-        )),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => _addEducation(),
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Add Education'),
-        ),
       ],
     );
   }
 
-  void _addEducation() {
-    // Simplified for demo, in real use show dialog
-    setState(() => _educationList.add(Education(degree: 'Degree Name', institution: 'University', year: '2024')));
+  Widget _buildEduForm({int? index}) {
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      borderColor: AppColors.primary,
+      child: Column(
+        children: [
+          TextField(controller: _eduDegreeCtrl, decoration: const InputDecoration(labelText: 'Degree / Course')),
+          const SizedBox(height: 12),
+          TextField(controller: _eduInstCtrl, decoration: const InputDecoration(labelText: 'Institution')),
+          const SizedBox(height: 12),
+          TextField(controller: _eduYearCtrl, decoration: const InputDecoration(labelText: 'Year')),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(onPressed: () => setState(() => _editingEduIndex = null), child: const Text('Cancel')),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  if (_eduDegreeCtrl.text.isEmpty) return;
+                  final edu = Education(degree: _eduDegreeCtrl.text, institution: _eduInstCtrl.text, year: _eduYearCtrl.text);
+                  setState(() {
+                    if (index != null) _educationList[index] = edu;
+                    else _educationList.add(edu);
+                    _editingEduIndex = null;
+                  });
+                },
+                child: const Text('Save Entry'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildSkillsTab() {
@@ -202,7 +273,7 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
         children: [
           Row(
             children: [
-              Expanded(child: TextFormField(controller: _skillCtrl, decoration: const InputDecoration(hintText: 'Enter skill...'))),
+              Expanded(child: TextFormField(controller: _skillCtrl, style: const TextStyle(color: AppColors.textPrimary), decoration: const InputDecoration(hintText: 'Enter skill...'))),
               const SizedBox(width: 12),
               ElevatedButton(onPressed: () {
                 if (_skillCtrl.text.isNotEmpty) {
@@ -217,7 +288,8 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
             spacing: 8,
             runSpacing: 8,
             children: _skills.map((s) => Chip(
-              label: Text(s),
+              backgroundColor: AppColors.primary.withOpacity(0.1),
+              label: Text(s, style: const TextStyle(color: AppColors.primary)),
               onDeleted: () => setState(() => _skills.remove(s)),
             )).toList(),
           ),
@@ -230,25 +302,75 @@ class _ResumeBuilderScreenState extends State<ResumeBuilderScreen> with TickerPr
     return ListView(
       padding: const EdgeInsets.all(16),
       children: [
-        ..._experiences.asMap().entries.map((e) => GlassCard(
-          margin: const EdgeInsets.only(bottom: 8),
-          child: ListTile(
-            title: Text(e.value.role, style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text(e.value.company),
-            trailing: IconButton(icon: const Icon(Icons.delete_outline), onPressed: () => setState(() => _experiences.removeAt(e.key))),
+        if (_editingExpIndex == -1) _buildExpForm(),
+        ..._experiences.asMap().entries.map((e) {
+          if (_editingExpIndex == e.key) return _buildExpForm(index: e.key);
+          return GlassCard(
+            margin: const EdgeInsets.only(bottom: 12),
+            onTap: () => setState(() {
+              _editingExpIndex = e.key;
+              _expRoleCtrl.text = e.value.role;
+              _expCompCtrl.text = e.value.company;
+              _expDurCtrl.text = e.value.duration;
+            }),
+            child: ListTile(
+              title: Text(e.value.role, style: const TextStyle(color: AppColors.textPrimary, fontWeight: FontWeight.bold)),
+              subtitle: Text('${e.value.company} (${e.value.duration})'),
+              trailing: IconButton(icon: const Icon(Icons.delete_outline, color: AppColors.rejected), onPressed: () => setState(() => _experiences.removeAt(e.key))),
+            ),
+          );
+        }),
+        if (_editingExpIndex == null)
+          Center(
+            child: TextButton.icon(
+              onPressed: () => setState(() {
+                _editingExpIndex = -1;
+                _expRoleCtrl.clear();
+                _expCompCtrl.clear();
+                _expDurCtrl.clear();
+              }),
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Add Experience Entry'),
+            ),
           ),
-        )),
-        const SizedBox(height: 16),
-        OutlinedButton.icon(
-          onPressed: () => _addExperience(),
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Add Experience'),
-        ),
       ],
     );
   }
 
-  void _addExperience() {
-    setState(() => _experiences.add(Experience(company: 'Company Name', role: 'Job Role', duration: '1 Year')));
+  Widget _buildExpForm({int? index}) {
+    return GlassCard(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      borderColor: AppColors.primary,
+      child: Column(
+        children: [
+          TextField(controller: _expRoleCtrl, decoration: const InputDecoration(labelText: 'Job Role')),
+          const SizedBox(height: 12),
+          TextField(controller: _expCompCtrl, decoration: const InputDecoration(labelText: 'Company')),
+          const SizedBox(height: 12),
+          TextField(controller: _expDurCtrl, decoration: const InputDecoration(labelText: 'Duration')),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(onPressed: () => setState(() => _editingExpIndex = null), child: const Text('Cancel')),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  if (_expRoleCtrl.text.isEmpty) return;
+                  final exp = Experience(role: _expRoleCtrl.text, company: _expCompCtrl.text, duration: _expDurCtrl.text);
+                  setState(() {
+                    if (index != null) _experiences[index] = exp;
+                    else _experiences.add(exp);
+                    _editingExpIndex = null;
+                  });
+                },
+                child: const Text('Save Entry'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 }
