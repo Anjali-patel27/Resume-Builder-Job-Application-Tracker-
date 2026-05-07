@@ -1,22 +1,44 @@
+import 'package:hive/hive.dart';
+
+part 'job_application.g.dart';
+
+@HiveType(typeId: 3)
 enum ApplicationStatus {
+  @HiveField(0)
   applied,
+  @HiveField(1)
   shortlisted,
+  @HiveField(2)
   interviewScheduled,
+  @HiveField(3)
   rejected,
+  @HiveField(4)
   selected,
 }
 
+@HiveType(typeId: 4)
 class JobApplication {
+  @HiveField(0)
   String id;
+  @HiveField(1)
   String applicationId;
+  @HiveField(2)
   String companyName;
+  @HiveField(3)
   String jobRole;
+  @HiveField(4)
   DateTime dateApplied;
+  @HiveField(5)
   String resumeId;
+  @HiveField(6)
   String resumeProfileName;
+  @HiveField(7)
   int statusIndex;
+  @HiveField(8)
   String notes;
+  @HiveField(9)
   DateTime createdAt;
+  @HiveField(10)
   DateTime updatedAt;
 
   JobApplication({
@@ -50,21 +72,5 @@ class JobApplication {
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
-  }
-
-  factory JobApplication.fromMap(Map<String, dynamic> map) {
-    return JobApplication(
-      id: map['id'],
-      applicationId: map['applicationId'] ?? '',
-      companyName: map['companyName'] ?? '',
-      jobRole: map['jobRole'] ?? '',
-      dateApplied: DateTime.parse(map['dateApplied']),
-      resumeId: map['resumeId'] ?? '',
-      resumeProfileName: map['resumeProfileName'] ?? '',
-      statusIndex: map['statusIndex'] ?? 0,
-      notes: map['notes'] ?? '',
-      createdAt: DateTime.parse(map['createdAt']),
-      updatedAt: DateTime.parse(map['updatedAt']),
-    );
   }
 }

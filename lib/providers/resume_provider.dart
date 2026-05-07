@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 import '../models/resume.dart';
-import '../services/database_service.dart';
 
 class ResumeProvider extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService.instance;
+  static const String _boxName = 'resumes_v3';
   List<Resume> _resumes = [];
   bool _isLoading = false;
 
@@ -18,7 +18,8 @@ class ResumeProvider extends ChangeNotifier {
   Future<void> _loadResumes() async {
     _isLoading = true;
     notifyListeners();
-    _resumes = await _db.readAllResumes();
+    final box = await Hive.openBox<Resume>(_boxName);
+    _resumes = box.values.toList();
     _isLoading = false;
     notifyListeners();
   }
@@ -48,17 +49,20 @@ class ResumeProvider extends ChangeNotifier {
       createdAt: DateTime.now(),
     );
 
-    await _db.createResume(resume);
+    final box = await Hive.openBox<Resume>(_boxName);
+    await box.put(resume.id, resume);
     await _loadResumes();
   }
 
   Future<void> updateResume(Resume resume) async {
-    await _db.updateResume(resume);
+    final box = await Hive.openBox<Resume>(_boxName);
+    await box.put(resume.id, resume);
     await _loadResumes();
   }
 
   Future<void> deleteResume(String id) async {
-    await _db.deleteResume(id);
+    final box = await Hive.openBox<Resume>(_boxName);
+    await box.delete(id);
     await _loadResumes();
   }
 

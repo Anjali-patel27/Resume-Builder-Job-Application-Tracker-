@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import 'models/resume.dart';
+import 'models/job_application.dart';
 import 'providers/resume_provider.dart';
 import 'providers/application_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'screens/main_navigation.dart';
-import 'services/database_service.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
 
@@ -23,9 +25,17 @@ void main() async {
     ),
   );
 
-  // Initialize Database Service (Supports both Web and Mobile)
-  await DatabaseService.instance.init();
+  // Initialize Hive
+  await Hive.initFlutter();
+  
+  // Register Adapters
+  Hive.registerAdapter(EducationAdapter());
+  Hive.registerAdapter(ExperienceAdapter());
+  Hive.registerAdapter(ResumeAdapter());
+  Hive.registerAdapter(ApplicationStatusAdapter());
+  Hive.registerAdapter(JobApplicationAdapter());
 
+  // Initialize Providers
   final resumeProvider = ResumeProvider();
   final applicationProvider = ApplicationProvider();
   

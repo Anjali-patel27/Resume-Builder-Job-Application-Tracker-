@@ -1,9 +1,16 @@
-import 'dart:convert';
+import 'package:hive/hive.dart';
 
+part 'resume.g.dart';
+
+@HiveType(typeId: 0)
 class Education {
+  @HiveField(0)
   String degree;
+  @HiveField(1)
   String institution;
+  @HiveField(2)
   String year;
+  @HiveField(3)
   String grade;
 
   Education({
@@ -32,10 +39,15 @@ class Education {
   }
 }
 
+@HiveType(typeId: 1)
 class Experience {
+  @HiveField(0)
   String role;
+  @HiveField(1)
   String company;
+  @HiveField(2)
   String duration;
+  @HiveField(3)
   String description;
 
   Experience({
@@ -64,17 +76,29 @@ class Experience {
   }
 }
 
+@HiveType(typeId: 2)
 class Resume {
+  @HiveField(0)
   String id;
+  @HiveField(1)
   String profileName;
+  @HiveField(2)
   String fullName;
+  @HiveField(3)
   String email;
+  @HiveField(4)
   String phone;
+  @HiveField(5)
   String address;
+  @HiveField(6)
   String objective;
+  @HiveField(7)
   List<Education> education;
+  @HiveField(8)
   List<String> skills;
+  @HiveField(9)
   List<Experience> experiences;
+  @HiveField(10)
   DateTime createdAt;
 
   Resume({
@@ -100,30 +124,10 @@ class Resume {
       'phone': phone,
       'address': address,
       'objective': objective,
-      'education': jsonEncode(education.map((e) => e.toMap()).toList()),
-      'skills': jsonEncode(skills),
-      'experiences': jsonEncode(experiences.map((e) => e.toMap()).toList()),
+      'education': education.map((e) => e.toMap()).toList(),
+      'skills': skills,
+      'experiences': experiences.map((e) => e.toMap()).toList(),
       'createdAt': createdAt.toIso8601String(),
     };
-  }
-
-  factory Resume.fromMap(Map<String, dynamic> map) {
-    return Resume(
-      id: map['id'],
-      profileName: map['profileName'] ?? '',
-      fullName: map['fullName'] ?? '',
-      email: map['email'] ?? '',
-      phone: map['phone'] ?? '',
-      address: map['address'] ?? '',
-      objective: map['objective'] ?? '',
-      education: (jsonDecode(map['education'] ?? '[]') as List)
-          .map((e) => Education.fromMap(e))
-          .toList(),
-      skills: List<String>.from(jsonDecode(map['skills'] ?? '[]')),
-      experiences: (jsonDecode(map['experiences'] ?? '[]') as List)
-          .map((e) => Experience.fromMap(e))
-          .toList(),
-      createdAt: DateTime.parse(map['createdAt']),
-    );
   }
 }

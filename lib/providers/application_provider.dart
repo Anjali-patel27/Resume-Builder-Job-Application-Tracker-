@@ -1,10 +1,10 @@
 import 'package:flutter/foundation.dart';
+import 'package:hive/hive.dart';
 import 'package:uuid/uuid.dart';
 import '../models/job_application.dart';
-import '../services/database_service.dart';
 
 class ApplicationProvider extends ChangeNotifier {
-  final DatabaseService _db = DatabaseService.instance;
+  static const String _boxName = 'applications_v3';
   List<JobApplication> _applications = [];
   bool _isLoading = false;
 
@@ -34,7 +34,8 @@ class ApplicationProvider extends ChangeNotifier {
   Future<void> _loadApplications() async {
     _isLoading = true;
     notifyListeners();
-    _applications = await _db.readAllApplications();
+    final box = await Hive.openBox<JobApplication>(_boxName);
+    _applications = box.values.toList();
     _isLoading = false;
     notifyListeners();
   }
@@ -68,7 +69,8 @@ class ApplicationProvider extends ChangeNotifier {
       updatedAt: now,
     );
 
-    await _db.createApplication(app);
+    final box = await Hive.openBox<JobApplication>(_boxName);
+    await box.put(app.id, app);
     await _loadApplications();
     return app;
   }
@@ -77,18 +79,21 @@ class ApplicationProvider extends ChangeNotifier {
     final app = _applications.firstWhere((a) => a.id == id);
     app.status = newStatus;
     app.updatedAt = DateTime.now();
-    await _db.updateApplication(app);
+    final box = await Hive.openBox<JobApplication>(_boxName);
+    await box.put(app.id, app);
     await _loadApplications();
   }
 
   Future<void> updateApplication(JobApplication app) async {
     app.updatedAt = DateTime.now();
-    await _db.updateApplication(app);
+    final box = await Hive.openBox<JobApplication>(_boxName);
+    await box.put(app.id, app);
     await _loadApplications();
   }
 
   Future<void> deleteApplication(String id) async {
-    await _db.deleteApplication(id);
+    final box = await Hive.openBox<JobApplication>(_boxName);
+    await box.delete(id);
     await _loadApplications();
   }
 
