@@ -14,7 +14,7 @@ class GradientButton extends StatelessWidget {
     super.key,
     required this.label,
     this.onPressed,
-    this.gradient = AppGradients.primary,
+    this.gradient = AppColors.mainGradient,
     this.width,
     this.height = 52,
     this.icon,
@@ -33,9 +33,9 @@ class GradientButton extends StatelessWidget {
         boxShadow: onPressed != null
             ? [
                 BoxShadow(
-                  color: AppColors.primary.withOpacity(0.35),
-                  blurRadius: 12,
-                  offset: const Offset(0, 4),
+                  color: AppColors.primary.withOpacity(0.3),
+                  blurRadius: 15,
+                  offset: const Offset(0, 8),
                 ),
               ]
             : null,
@@ -51,10 +51,7 @@ class GradientButton extends StatelessWidget {
                 ? const SizedBox(
                     width: 22,
                     height: 22,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2.5,
-                    ),
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
                   )
                 : Row(
                     mainAxisSize: MainAxisSize.min,
@@ -65,11 +62,7 @@ class GradientButton extends StatelessWidget {
                       ],
                       Text(
                         label,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 16,
-                        ),
+                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 16, letterSpacing: 0.5),
                       ),
                     ],
                   ),

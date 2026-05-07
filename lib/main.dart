@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:provider/provider.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 import 'models/resume.dart';
 import 'models/job_application.dart';
@@ -14,8 +15,6 @@ import 'utils/app_colors.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Set status bar style
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -23,19 +22,14 @@ void main() async {
     ),
   );
 
-  // Initialize Hive
   await Hive.initFlutter();
-
-  // Register adapters
   Hive.registerAdapter(EducationAdapter());
   Hive.registerAdapter(ExperienceAdapter());
   Hive.registerAdapter(ResumeAdapter());
   Hive.registerAdapter(JobApplicationAdapter());
 
-  // Open boxes
   final resumeProvider = ResumeProvider();
   final applicationProvider = ApplicationProvider();
-
   await resumeProvider.init();
   await applicationProvider.init();
 
@@ -72,48 +66,33 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
-  late Animation<double> _fadeIn;
-  late Animation<double> _scale;
-  late Animation<double> _slideUp;
+  late Animation<double> _fadeAnimation;
+  late Animation<double> _scaleAnimation;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
+    _controller = AnimationController(vsync: this, duration: const Duration(seconds: 2));
+    _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeIn)),
     );
-    _fadeIn = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
-    );
-    _scale = Tween<double>(begin: 0.7, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.0, 0.7, curve: Curves.elasticOut),
-      ),
-    );
-    _slideUp = Tween<double>(begin: 30, end: 0).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.3, 0.8, curve: Curves.easeOut),
-      ),
+    _scaleAnimation = Tween<double>(begin: 0.8, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeOutBack)),
     );
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
+    Future.delayed(const Duration(seconds: 3), () {
       if (mounted) {
-        Navigator.of(context).pushReplacement(
+        Navigator.pushReplacement(
+          context,
           PageRouteBuilder(
-            pageBuilder: (_, __, ___) => const MainNavigation(),
-            transitionDuration: const Duration(milliseconds: 500),
-            transitionsBuilder: (_, anim, __, child) =>
-                FadeTransition(opacity: anim, child: child),
+            pageBuilder: (context, animation, secondaryAnimation) => const MainNavigation(),
+            transitionsBuilder: (context, animation, secondaryAnimation, child) {
+              return FadeTransition(opacity: animation, child: child);
+            },
+            transitionDuration: const Duration(milliseconds: 800),
           ),
         );
       }
@@ -129,76 +108,55 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.background),
-        child: Center(
-          child: AnimatedBuilder(
-            animation: _controller,
-            builder: (context, _) {
-              return Opacity(
-                opacity: _fadeIn.value,
-                child: Transform.translate(
-                  offset: Offset(0, _slideUp.value),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Transform.scale(
-                        scale: _scale.value,
-                        child: Container(
-                          width: 100,
-                          height: 100,
-                          decoration: BoxDecoration(
-                            gradient: AppGradients.primary,
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: AppColors.primary.withOpacity(0.4),
-                                blurRadius: 30,
-                                spreadRadius: 5,
-                              ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.description_rounded,
-                            color: Colors.white,
-                            size: 52,
-                          ),
-                        ),
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: AnimatedBuilder(
+          animation: _controller,
+          builder: (context, child) {
+            return FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        gradient: AppColors.mainGradient,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(color: AppColors.primary.withOpacity(0.3), blurRadius: 40, offset: const Offset(0, 10)),
+                        ],
                       ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        'ResumeTrack Pro',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 30,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 0.5,
-                        ),
+                      child: const Icon(Icons.rocket_launch_rounded, color: Colors.white, size: 50),
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'RESUMETRACK',
+                      style: GoogleFonts.outfit(
+                        fontSize: 32,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 4,
+                        color: AppColors.textPrimary,
                       ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Build. Apply. Track. Succeed.',
-                        style: TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w400,
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'PROFESSIONAL CAREER MANAGER',
+                      style: GoogleFonts.outfit(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 2,
+                        color: AppColors.primaryLight,
                       ),
-                      const SizedBox(height: 60),
-                      SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          color: AppColors.primary.withOpacity(0.7),
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

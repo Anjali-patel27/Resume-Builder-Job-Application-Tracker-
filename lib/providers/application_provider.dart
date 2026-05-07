@@ -110,7 +110,7 @@ class ApplicationProvider extends ChangeNotifier {
     return app;
   }
 
-  Future<void> updateStatus(String id, ApplicationStatus newStatus) async {
+  Future<void> updateApplicationStatus(String id, ApplicationStatus newStatus) async {
     final app = _box.get(id);
     if (app != null) {
       app.status = newStatus;
@@ -118,6 +118,21 @@ class ApplicationProvider extends ChangeNotifier {
       await app.save();
       _loadApplications();
     }
+  }
+
+  List<JobApplication> searchAndFilter(String query, ApplicationStatus? status) {
+    var list = _applications.toList();
+    if (query.isNotEmpty) {
+      final q = query.toLowerCase();
+      list = list.where((a) => 
+        a.companyName.toLowerCase().contains(q) || 
+        a.jobRole.toLowerCase().contains(q)
+      ).toList();
+    }
+    if (status != null) {
+      list = list.where((a) => a.status == status).toList();
+    }
+    return list;
   }
 
   Future<void> updateApplication(JobApplication app) async {

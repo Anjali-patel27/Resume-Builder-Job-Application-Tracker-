@@ -21,394 +21,304 @@ class DashboardScreen extends StatelessWidget {
     final resumeProvider = context.watch<ResumeProvider>();
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(gradient: AppGradients.background),
-        child: CustomScrollView(
-          slivers: [
-            _buildSliverAppBar(context),
-            SliverToBoxAdapter(
-              child: AnimationLimiter(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: AnimationConfiguration.toStaggeredList(
-                    duration: const Duration(milliseconds: 400),
-                    childAnimationBuilder: (widget) => SlideAnimation(
-                      verticalOffset: 30,
-                      child: FadeInAnimation(child: widget),
-                    ),
-                    children: [
-                      const SizedBox(height: 8),
-                      _buildStatsRow(context, appProvider, resumeProvider),
-                      const SizedBox(height: 16),
-                      if (appProvider.totalApplications > 0) ...[
-                        _buildSectionHeader('Application Status', context),
-                        _buildPieChart(context, appProvider),
-                        const SizedBox(height: 8),
-                        _buildStatusLegend(context, appProvider),
-                        const SizedBox(height: 16),
-                      ],
-                      _buildSectionHeader('Recent Applications', context),
-                      if (appProvider.recentApplications.isEmpty)
-                        _buildEmptyRecent(context)
-                      else
-                        ...appProvider.recentApplications
-                            .map((app) => _buildApplicationCard(context, app)),
-                      const SizedBox(height: 100),
-                    ],
+      backgroundColor: AppColors.background,
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          _buildAppBar(context),
+          SliverToBoxAdapter(
+            child: AnimationLimiter(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: AnimationConfiguration.toStaggeredList(
+                  duration: const Duration(milliseconds: 500),
+                  childAnimationBuilder: (widget) => FadeInAnimation(
+                    child: SlideAnimation(verticalOffset: 20, child: widget),
                   ),
+                  children: [
+                    _buildOverviewCards(appProvider, resumeProvider),
+                    const SizedBox(height: 24),
+                    if (appProvider.totalApplications > 0) ...[
+                      _buildChartSection(context, appProvider),
+                      const SizedBox(height: 24),
+                    ],
+                    _buildSectionHeader('Recent Activity', () {
+                      // Navigate to search/list
+                    }),
+                    if (appProvider.recentApplications.isEmpty)
+                      _buildEmptyState()
+                    else
+                      ...appProvider.recentApplications.map((app) => _buildApplicationTile(context, app)),
+                    const SizedBox(height: 100),
+                  ],
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const JobApplicationEntryScreen()),
         ),
-        icon: const Icon(Icons.add_rounded),
-        label: const Text('Add Application'),
+        icon: const Icon(Icons.add_task_rounded),
+        label: const Text('Add Job', style: TextStyle(fontWeight: FontWeight.w700, letterSpacing: 0.5)),
         backgroundColor: AppColors.primary,
+        elevation: 4,
       ),
     );
   }
 
-  Widget _buildSliverAppBar(BuildContext context) {
+  Widget _buildAppBar(BuildContext context) {
     return SliverAppBar(
-      expandedHeight: 140,
-      floating: false,
+      expandedHeight: 180,
       pinned: true,
       backgroundColor: AppColors.background,
+      elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
         background: Container(
-          decoration: const BoxDecoration(
+          decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [Color(0xFF1A1040), Color(0xFF0F0E17)],
+              colors: [AppColors.primary.withOpacity(0.15), Colors.transparent],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),
           ),
           child: SafeArea(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Good Morning! 👋',
-                    style: TextStyle(
-                      color: AppColors.textSecondary,
-                      fontSize: 14,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  ShaderMask(
-                    shaderCallback: (bounds) =>
-                        AppGradients.primary.createShader(bounds),
-                    child: const Text(
-                      'ResumeTrack Pro',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            DateFormat('EEEE, MMM d').format(DateTime.now()),
+                            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13, fontWeight: FontWeight.w500),
+                          ),
+                          const SizedBox(height: 4),
+                          const Text(
+                            'Career Dashboard',
+                            style: TextStyle(color: AppColors.textPrimary, fontSize: 26, fontWeight: FontWeight.w800),
+                          ),
+                        ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  const Text(
-                    'Track your career journey',
-                    style: TextStyle(
-                      color: AppColors.textHint,
-                      fontSize: 13,
-                    ),
+                      Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(color: AppColors.primary.withOpacity(0.3), width: 2),
+                        ),
+                        child: const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: AppColors.surface,
+                          child: Icon(Icons.person_rounded, color: AppColors.primary),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
             ),
           ),
         ),
-        collapseMode: CollapseMode.pin,
-        title: const Text(
-          'ResumeTrack Pro',
-          style: TextStyle(color: AppColors.textPrimary, fontSize: 18),
-        ),
-        centerTitle: false,
-        titlePadding: const EdgeInsets.only(left: 20, bottom: 16),
       ),
     );
   }
 
-  Widget _buildStatsRow(
-    BuildContext context,
-    ApplicationProvider appProvider,
-    ResumeProvider resumeProvider,
-  ) {
+  Widget _buildOverviewCards(ApplicationProvider appProvider, ResumeProvider resumeProvider) {
     final dist = appProvider.statusDistribution;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
+      child: GridView.count(
+        shrinkWrap: true,
+        physics: const NeverScrollableScrollPhysics(),
+        crossAxisCount: 2,
+        crossAxisSpacing: 12,
+        mainAxisSpacing: 12,
+        childAspectRatio: 1.6,
         children: [
-          Expanded(
-            child: _StatCard(
-              label: 'Total Applications',
-              value: '${appProvider.totalApplications}',
-              icon: Icons.work_outline_rounded,
-              gradient: AppGradients.primary,
-              glowColor: AppColors.primary,
-            ),
+          _StatCard(
+            label: 'Applications',
+            value: appProvider.totalApplications.toString(),
+            icon: Icons.work_rounded,
+            color: AppColors.primary,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _StatCard(
-              label: 'Resumes Built',
-              value: '${resumeProvider.resumes.length}',
-              icon: Icons.description_outlined,
-              gradient: AppGradients.gold,
-              glowColor: AppColors.accentGold,
-            ),
+          _StatCard(
+            label: 'Resumes',
+            value: resumeProvider.resumes.length.toString(),
+            icon: Icons.description_rounded,
+            color: AppColors.shortlisted,
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: _StatCard(
-              label: 'Interviews',
-              value: '${dist[ApplicationStatus.interviewScheduled] ?? 0}',
-              icon: Icons.calendar_today_rounded,
-              gradient: const LinearGradient(
-                colors: [Color(0xFFFFB74D), Color(0xFFFF8F00)],
-              ),
-              glowColor: AppColors.interviewScheduled,
-            ),
+          _StatCard(
+            label: 'Interviews',
+            value: (dist[ApplicationStatus.interviewScheduled] ?? 0).toString(),
+            icon: Icons.video_call_rounded,
+            color: AppColors.interview,
+          ),
+          _StatCard(
+            label: 'Success Rate',
+            value: appProvider.totalApplications == 0 
+                ? '0%' 
+                : '${((dist[ApplicationStatus.selected] ?? 0) / appProvider.totalApplications * 100).toInt()}%',
+            icon: Icons.trending_up_rounded,
+            color: AppColors.selected,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSectionHeader(String title, BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
-      child: Row(
-        children: [
-          Container(
-            width: 3,
-            height: 18,
-            decoration: BoxDecoration(
-              gradient: AppGradients.primary,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 10),
-          Text(
-            title,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 17,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPieChart(BuildContext context, ApplicationProvider provider) {
+  Widget _buildChartSection(BuildContext context, ApplicationProvider provider) {
     final dist = provider.statusDistribution;
     final total = provider.totalApplications;
-    if (total == 0) return const SizedBox.shrink();
 
-    final sections = <PieChartSectionData>[];
-    for (final entry in dist.entries) {
-      if (entry.value == 0) continue;
-      final pct = (entry.value / total * 100).toStringAsFixed(0);
-      sections.add(
-        PieChartSectionData(
-          value: entry.value.toDouble(),
-          color: AppColors.statusColor(entry.key.index),
-          radius: 55,
-          title: '$pct%',
-          titleStyle: const TextStyle(
-            color: Colors.white,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
+    return GlassCard(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Status Distribution',
+            style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
           ),
-        ),
-      );
-    }
-
-    return SizedBox(
-      height: 200,
-      child: PieChart(
-        PieChartData(
-          sections: sections,
-          centerSpaceRadius: 45,
-          sectionsSpace: 3,
-          pieTouchData: PieTouchData(enabled: true),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatusLegend(BuildContext context, ApplicationProvider provider) {
-    final dist = provider.statusDistribution;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Wrap(
-        spacing: 10,
-        runSpacing: 8,
-        children: ApplicationStatus.values.map((s) {
-          final count = dist[s] ?? 0;
-          return Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-            decoration: BoxDecoration(
-              color: AppColors.statusColor(s.index).withOpacity(0.1),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.statusColor(s.index).withOpacity(0.3),
-              ),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 8,
-                  height: 8,
-                  decoration: BoxDecoration(
-                    color: AppColors.statusColor(s.index),
-                    shape: BoxShape.circle,
+          const SizedBox(height: 24),
+          Row(
+            children: [
+              SizedBox(
+                height: 140,
+                width: 140,
+                child: PieChart(
+                  PieChartData(
+                    sectionsSpace: 4,
+                    centerSpaceRadius: 40,
+                    sections: ApplicationStatus.values.map((s) {
+                      final val = dist[s] ?? 0;
+                      return PieChartSectionData(
+                        color: AppColors.getStatusColor(s.index),
+                        value: val.toDouble(),
+                        title: '',
+                        radius: 20,
+                      );
+                    }).toList(),
                   ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '$count ${_shortLabel(s)}',
-                  style: TextStyle(
-                    color: AppColors.statusColor(s.index),
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }).toList(),
-      ),
-    );
-  }
-
-  String _shortLabel(ApplicationStatus s) {
-    switch (s) {
-      case ApplicationStatus.applied:
-        return 'Applied';
-      case ApplicationStatus.shortlisted:
-        return 'Shortlisted';
-      case ApplicationStatus.interviewScheduled:
-        return 'Interview';
-      case ApplicationStatus.rejected:
-        return 'Rejected';
-      case ApplicationStatus.selected:
-        return 'Selected';
-    }
-  }
-
-  Widget _buildEmptyRecent(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      child: GlassCard(
-        child: Column(
-          children: [
-            const Icon(
-              Icons.inbox_rounded,
-              color: AppColors.textHint,
-              size: 48,
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'No applications yet',
-              style: TextStyle(
-                color: AppColors.textSecondary,
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
               ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Tap + to add your first job application',
-              style: TextStyle(color: AppColors.textHint, fontSize: 13),
-            ),
-          ],
-        ),
+              const SizedBox(width: 32),
+              Expanded(
+                child: Column(
+                  children: ApplicationStatus.values.take(3).map((s) {
+                    final val = dist[s] ?? 0;
+                    final pct = total == 0 ? 0 : (val / total * 100).toInt();
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: _ChartLegendItem(status: s, count: val, percentage: pct),
+                    );
+                  }).toList(),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildApplicationCard(BuildContext context, JobApplication app) {
+  Widget _buildSectionHeader(String title, VoidCallback onAction) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.w800),
+          ),
+          TextButton(
+            onPressed: onAction,
+            child: const Text('View All', style: TextStyle(color: AppColors.primary, fontWeight: FontWeight.w600)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildApplicationTile(BuildContext context, JobApplication app) {
     return GlassCard(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => ApplicationDetailScreen(application: app),
-        ),
+        MaterialPageRoute(builder: (_) => ApplicationDetailScreen(application: app)),
       ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.all(16),
       child: Row(
         children: [
           Container(
-            width: 46,
-            height: 46,
+            width: 48,
+            height: 48,
             decoration: BoxDecoration(
-              gradient: AppGradients.primary,
+              color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Center(
               child: Text(
-                app.companyName.isNotEmpty
-                    ? app.companyName[0].toUpperCase()
-                    : '?',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w800,
-                ),
+                app.companyName.substring(0, 1).toUpperCase(),
+                style: const TextStyle(color: AppColors.primary, fontSize: 20, fontWeight: FontWeight.w800),
               ),
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   app.companyName,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w700,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  app.jobRole,
-                  style: const TextStyle(
-                    color: AppColors.textSecondary,
-                    fontSize: 13,
-                  ),
+                  style: const TextStyle(color: AppColors.textPrimary, fontSize: 15, fontWeight: FontWeight.w700),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  DateFormat('MMM dd, yyyy').format(app.dateApplied),
-                  style: const TextStyle(
-                    color: AppColors.textHint,
-                    fontSize: 11,
-                  ),
+                  app.jobRole,
+                  style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 8),
           StatusBadge(status: app.status, compact: true),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Padding(
+      padding: const EdgeInsets.all(24),
+      child: Center(
+        child: Column(
+          children: [
+            Icon(Icons.rocket_launch_rounded, size: 64, color: AppColors.primary.withOpacity(0.2)),
+            const SizedBox(height: 16),
+            const Text(
+              'No applications found',
+              style: TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.w700),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Ready to land your dream job? Start by\nadding your first application.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -418,65 +328,66 @@ class _StatCard extends StatelessWidget {
   final String label;
   final String value;
   final IconData icon;
-  final Gradient gradient;
-  final Color glowColor;
+  final Color color;
 
-  const _StatCard({
-    required this.label,
-    required this.value,
-    required this.icon,
-    required this.gradient,
-    required this.glowColor,
-  });
+  const _StatCard({required this.label, required this.value, required this.icon, required this.color});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF1E1E35), Color(0xFF16213E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.cardBorder),
-        boxShadow: [
-          BoxShadow(
-            color: glowColor.withOpacity(0.1),
-            blurRadius: 12,
-            spreadRadius: 1,
-          ),
-        ],
+        border: Border.all(color: AppColors.cardBorder, width: 1),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Container(
             padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: gradient,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(icon, color: Colors.white, size: 18),
+            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+            child: Icon(icon, color: color, size: 20),
           ),
-          const SizedBox(height: 10),
-          Text(
-            value,
-            style: const TextStyle(
-              color: AppColors.textPrimary,
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            style: const TextStyle(color: AppColors.textHint, fontSize: 10),
-            maxLines: 2,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(value, style: const TextStyle(color: AppColors.textPrimary, fontSize: 20, fontWeight: FontWeight.w800)),
+              Text(label, style: const TextStyle(color: AppColors.textSecondary, fontSize: 12, fontWeight: FontWeight.w500)),
+            ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ChartLegendItem extends StatelessWidget {
+  final ApplicationStatus status;
+  final int count;
+  final int percentage;
+
+  const _ChartLegendItem({required this.status, required this.count, required this.percentage});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = AppColors.getStatusColor(status.index);
+    return Row(
+      children: [
+        Container(width: 12, height: 12, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(3))),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            status.name.substring(0, 1).toUpperCase() + status.name.substring(1),
+            style: const TextStyle(color: AppColors.textSecondary, fontSize: 13),
+          ),
+        ),
+        Text(
+          '$percentage%',
+          style: const TextStyle(color: AppColors.textPrimary, fontSize: 13, fontWeight: FontWeight.w700),
+        ),
+      ],
     );
   }
 }
