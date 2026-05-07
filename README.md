@@ -1,153 +1,93 @@
-# 📄 ResumeTrack Pro — Smart Resume Builder & Job Application Tracker
+# ResumeTrack Pro 🚀
 
-A **Flutter-based** mobile application that allows students and job seekers to create structured resumes, manage multiple job applications, track application status, and receive career insights — with full **offline-first** support.
+ResumeTrack Pro is a professional-grade, offline-first Flutter application designed to empower job seekers. It combines a robust **Multi-Profile Resume Builder** with an advanced **Job Application Tracker**, providing a centralized hub for managing your entire career search with precision and style.
 
----
-
-## 🚀 Features
-
-### 🗂️ Resume Builder Module
-- Create & edit multiple resume profiles
-- Personal Details, Education, Skills, Experience (optional)
-- Profile Name for easy identification and linking
-
-### 💼 Job Application Module
-- Add applications with Company, Role, Date Applied, and linked Resume
-- Auto-generates unique Application IDs (`APP-XXXXXXX-XXXX`)
-- Notes section for extra context
-
-### 📊 Application Tracking Module
-- 5-stage tracking: **Applied → Shortlisted → Interview Scheduled → Rejected → Selected**
-- One-tap status update from the detail view
-- Color-coded status badges throughout the UI
-
-### 📈 Application Dashboard
-- Total applications & resumes counters
-- Interview count stat card
-- Pie chart showing status distribution
-- Recent applications list with quick navigation
-
-### 🔗 Resume-Version Mapping
-- Each application is linked to a specific resume profile at the time of submission
-- The resume profile name is stored alongside the application for historical accuracy
-
-### 🔍 Search & Filter Module
-- Real-time search by company name or job role
-- Filter by application status (All / Applied / Shortlisted / Interview / Rejected / Selected)
-- Result count indicator
-
-### 📴 Offline Functionality
-- All data stored locally using **Hive** (NoSQL embedded database)
-- Full CRUD works without internet connectivity
-- Online/offline banner indicator in the UI
-
-### ✅ Validation & Error Handling
-- Required field validation on all forms
-- Duplicate profile name prevention
-- Meaningful Snackbar feedback
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Flutter](https://img.shields.io/badge/Flutter-v3.22+-02569B?logo=flutter)
+![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite)
 
 ---
 
-## 🛠️ Tech Stack
+## ✨ Key Features
 
-| Layer | Technology |
-|---|---|
-| Framework | Flutter 3.32 / Dart 3.8 |
-| State Management | Provider |
-| Local Storage | Hive + Hive Flutter |
-| Charts | fl_chart |
-| Fonts | Google Fonts (Outfit) |
-| Animations | flutter_staggered_animations |
-| Network Awareness | connectivity_plus |
-| UUID Generation | uuid |
+### 📊 Professional Dashboard
+Get a high-level view of your career progress. The dashboard provides real-time analytics, success rate metrics, and lifecycle distribution charts powered by `fl_chart`.
 
----
+### 📄 Intelligent Resume Builder
+Create and manage multiple resume profiles tailored for different industries.
+- **Inline Entry Forms**: Direct data entry for Education and Experience.
+- **Skill Management**: Tag-based skill organization.
+- **Modular Sections**: Easily edit Personal Info, Education, Skills, and Work History.
 
-## 📱 Screens
+### 🎯 Job Application Lifecycle Tracker
+Never lose track of an opportunity. Manage your applications through their entire journey:
+- **Status Tracking**: Applied → Shortlisted → Interview → Selected/Rejected.
+- **Resume Linking**: Track exactly which resume profile was used for each application.
+- **Detailed Notes**: Keep records of contact persons, interview questions, and feedback.
 
-1. **Splash Screen** — Animated brand intro
-2. **Dashboard Screen** — Stats, pie chart, recent applications
-3. **Resume List Screen** — All resume profiles
-4. **Resume Builder Screen** — 4-tab form (Personal / Education / Skills / Experience)
-5. **Job Application Entry Screen** — Add new application with resume picker
-6. **Application Detail Screen** — Full details + status stepper + delete
-7. **Search & Filter Screen** — Real-time search and status filtering
+### 📱 Premium SaaS-Inspired UI
+A meticulously crafted interface designed for clarity and impact.
+- **Slate & Indigo Theme**: A high-contrast, eye-friendly dark mode.
+- **Responsive Layouts**: Optimized for a seamless mobile experience.
+- **Glassmorphism Elements**: Modern, polished surface components.
 
 ---
 
-## 🗂️ Project Structure
+## 🛠️ Technology Stack
 
-```
-lib/
-├── main.dart                     # App entry, Hive init, splash screen
-├── models/
-│   ├── resume.dart               # Resume, Education, Experience models
-│   ├── resume.g.dart             # Hive adapters
-│   ├── job_application.dart      # JobApplication model + ApplicationStatus
-│   └── job_application.g.dart   # Hive adapters
-├── providers/
-│   ├── resume_provider.dart      # Resume CRUD + state
-│   ├── application_provider.dart # Application CRUD + filter + stats
-│   └── connectivity_provider.dart # Online/offline tracking
-├── screens/
-│   ├── main_navigation.dart      # Bottom nav shell + offline banner
-│   ├── dashboard_screen.dart     # Dashboard with pie chart
-│   ├── resume_list_screen.dart   # Resume list
-│   ├── resume_builder_screen.dart # Resume builder form
-│   ├── job_application_entry_screen.dart
-│   ├── application_detail_screen.dart
-│   └── search_filter_screen.dart
-├── widgets/
-│   ├── glass_card.dart           # Glassmorphic card component
-│   ├── status_badge.dart         # Colored status indicator
-│   └── gradient_button.dart      # Gradient button
-└── utils/
-    ├── app_colors.dart           # Color constants + gradients
-    └── app_theme.dart            # ThemeData configuration
-```
+- **Framework**: [Flutter](https://flutter.dev) (Dart)
+- **State Management**: [Provider](https://pub.dev/packages/provider)
+- **Local Database**: [SQLite (sqflite)](https://pub.dev/packages/sqflite) - Robust relational storage.
+- **Charts**: [fl_chart](https://pub.dev/packages/fl_chart)
+- **Typography**: [Google Fonts (Outfit)](https://fonts.google.com/specimen/Outfit)
+- **Animations**: [Flutter Staggered Animations](https://pub.dev/packages/flutter_staggered_animations)
 
 ---
 
-## 🔄 Resume-Application Mapping Logic
+## 🚀 Getting Started
 
-When a user creates a job application:
-1. They **select a resume profile** from a visual card picker
-2. Both the `resumeId` (UUID) and `resumeProfileName` (display name) are stored with the application
-3. This ensures historical integrity — even if the resume is later renamed or deleted, the application record retains the original profile name
-4. The Application Detail screen shows the linked resume name under "Resume Used"
+### Prerequisites
+- Flutter SDK (v3.22 or higher)
+- Android Studio / VS Code with Flutter extensions
+- A mobile emulator or physical device
 
----
-
-## 📦 Getting Started
-
-```bash
-# Clone the repository
-git clone https://github.com/Anjali-patel27/Resume-Builder-Job-Application-Tracker-.git
-
-# Install dependencies
-flutter pub get
-
-# Run the app
-flutter run
-```
-
----
-
-## 🔮 Future Scope
-
-- Firebase backend sync for cloud backup and multi-device support
-- PDF export of resume from the app
-- Job posting integration (LinkedIn / Naukri APIs)
-- Push notifications for interview reminders
-- AI-powered resume suggestions based on job role
-- Dark / Light theme toggle
+### Installation
+1.  **Clone the repository**:
+    ```bash
+    git clone https://github.com/Anjali-patel27/Resume-Builder-Job-Application-Tracker-.git
+    ```
+2.  **Navigate to the project directory**:
+    ```bash
+    cd Resume-Builder-Job-Application-Tracker-
+    ```
+3.  **Install dependencies**:
+    ```bash
+    flutter pub get
+    ```
+4.  **Run the application**:
+    ```bash
+    flutter run
+    ```
 
 ---
 
-## 📝 Conclusion
+## 📁 Architecture Overview
 
-ResumeTrack Pro solves the real-world pain points of job seekers by unifying resume management and application tracking in a single, offline-capable app. With a clean modular architecture (Provider + Hive), intuitive navigation, and a premium dark UI, it provides a smooth and reliable experience for managing career progress.
+- **Models**: Structured data entities for Resumes and Applications.
+- **Providers**: Centralized business logic and state management.
+- **Services**: Abstracted database layer for SQLite operations.
+- **Widgets**: Reusable UI components (GlassCards, StatusBadges, Custom Buttons).
 
 ---
 
-*Developed with ❤️ using Flutter*
+## 📜 License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 📬 Contact
+
+For support or feedback, please reach out via the repository's issue tracker.
+
+Developed with ❤️ for the Flutter community.
