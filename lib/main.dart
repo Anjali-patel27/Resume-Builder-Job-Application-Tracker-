@@ -7,6 +7,7 @@ import 'providers/resume_provider.dart';
 import 'providers/application_provider.dart';
 import 'providers/connectivity_provider.dart';
 import 'screens/main_navigation.dart';
+import 'services/database_service.dart';
 import 'utils/app_theme.dart';
 import 'utils/app_colors.dart';
 
@@ -22,7 +23,9 @@ void main() async {
     ),
   );
 
-  // Initialize Providers (Database initialization is handled inside Providers via DatabaseService)
+  // Initialize Database Service (Supports both Web and Mobile)
+  await DatabaseService.instance.init();
+
   final resumeProvider = ResumeProvider();
   final applicationProvider = ApplicationProvider();
   
